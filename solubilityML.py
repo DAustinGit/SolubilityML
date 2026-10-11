@@ -52,10 +52,10 @@ def fetch_data(database: str, table: str) -> pd.DataFrame:
     except Exception as e:
         print(f"Error connecting to database: {e}")
         return pd.DataFrame()
-df = fetch_data(database='solubility_training', table='delaney_solubility_with_descriptors')
+df = fetch_data(database='solubility_training', table='mol_properties')
 
-y = df['logS']   # Y is feature used for training
-x = df.drop('logS', axis=1)   #X is the feature we are predicting drop logS and axis = 1 --> work in coluns
+y = df['measured log(solubility:mol/L)']   # Y is feature used for training
+x = df.drop(['measured log(solubility:mol/L)', 'Compound ID', 'SMILES'], axis=1)     #X is the feature we are predicting drop logS and axis = 1 --> work in coluns
 
 x_train, x_test, y_train, y_test = train_test_split (x, y, test_size= 0.2, random_state = 100) #splits the data for train and test sets testing set is 20% of data
 print (x_train)
@@ -100,4 +100,5 @@ grid_search.fit(x_train, y_train)
 print(f"Best Parameters: {grid_search.best_params_}")
 print(f"Best CV R² Score: {grid_search.best_score_:.4f}")
 print(f"Test Set R² Score: {grid_search.score(x_test, y_test):.4f}")
-joblib.dump(grid_search, "solubilityML_grid_search")
+print(df.head())
+joblib.dump(grid_search, "solubilityML_grid_search_3")
