@@ -1,0 +1,88 @@
+import streamlit as st
+from streamlit_ketcher import st_ketcher
+from rdkit import Chem
+from rdkit.Chem import rdMolDescriptors, Descriptors, Lipinski
+import pandas as pd
+import db_search as db
+import math
+#to run: python -m streamlit run mol_entry.py
+st.set_page_config(layout="wide")
+st.title("🧪 Interactive Molecular Descriptor Calculator")
+
+# 1. Embed the drawing interface
+st.subheader("Draw your molecule below:")
+# The widget returns the SMILES string whenever the user modifies the drawing
+smiles = st_ketcher() 
+
+# 2. Process the structure dynamically with RDKit
+@st.cache_data(ttl=3600)
+def fetch(smiles) -> pd.DataFrame:
+    data = db.fetch_data(entry = smiles, column = "SMILES", table='mol_properties_exp') 
+    if data is None or (isinstance(data, pd.DataFrame) and data.empty):
+        return None
+    return data
+  
+
+def push(mol_params):
+    db.push_data (mol_params, table='mol_properties_exp')
+    print (mol_params)
+
+def calc_properties(mol):
+     if mol is not None:
+        formula = rdMolDescriptors.CalcMolFormula(mol)
+        mol_weight = Descriptors.MolWt(mol)
+        mol_logp = Descriptors.MolLogP(mol)
+        rotatable_bonds = Lipinski.NumRotatableBonds(mol)        
+        heavy_atom_count = Lipinski.HeavyAtomCount(mol)
+        
+        aromatic_atoms = len([atom for atom in mol.GetAtoms() if atom.GetIsAromatic()])
+        aromatic_proportion = (aromatic_atoms / heavy_atom_count) if heavy_atom_count > 0 else 0.0
+        H_Acceptors = Lipinski.NumHAcceptors(mol)
+        H_Donors = Lipinski.NumHDonors(mol)
+        Nitrogen_Oxygen = Lipinski.NOCount(mol)
+        tpsa = Descriptors.TPSA(mol, includeSandP=True)
+        st.info(f"**Generated SMILES:** `{smiles}`")
+      
+       # x_pred = np.array(mol_params).reshape(1,-1)
+      
+        fetched_data =  fetch(smiles)
+        
+        # Display results in structured columns
+    
+        
+        if  fetched_data is not None:
+            st.success ("molecule found in database")
+            st.dataframe(fetched_data)
+        else:
+            st.error ("Molecule not in database please add it below")
+            with st.form("add molecule",clear_on_submit=True):
+                solubility = st.text_input('Add solubility (g/L) at 25°C', value="0.0")
+                submit_button = st.form_submit_button("Add to database")
+                if submit_button:
+                    try: 
+                        logS = math.log10((float(solubility)) / mol_weight)
+                        mol_params = pd.DataFrame([[
+                            formula, logS, smiles, rotatable_bonds, H_Acceptors, 
+                            H_Donors, Nitrogen_Oxygen, mol_weight, mol_logp, 
+                            aromatic_proportion, tpsa
+                        ]], columns=[
+                            'Compound_ID','measured log(solubility:mol/L)','SMILES',
+                            'num_Rotatable_Bonds','num_H_Bond_Acceptors', 'num_H_Bond_Doners', 
+                            'num_Nitrogen_Oxygen', 'mol_weight', 'LogP', 'aromatic proportion', 'tpsa'
+                        ])
+                        push(mol_params)
+                        st.success("Successfully added to database! Refreshing...")
+                        st.cache_data.clear() # Clear cache so it fetches fresh on rerun
+                        st.rerun()
+                    except ValueError:
+                        st.warning("Please enter a valid numeric value for solubility.")
+                    except Exception as e:
+                        st.error(f"Database Error: {e}")
+
+        
+     else:
+        st.error("The drawn structure is not completely recognized yet. Keep drawing!")
+
+if smiles:
+    mol = Chem.MolFromSmiles(smiles)
+    calc_properties(mol)

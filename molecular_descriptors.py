@@ -46,14 +46,14 @@ if smiles:
 
         st.info(f"**Generated SMILES:** `{smiles}`")
 
-        pipeline = joblib.load("solubilityML_grid_search_3")
-        best_pipeline = pipeline.best_estimator_
+        pipeline = joblib.load("solubilityML_grid_search_4")
+        
         mol_params = pd.DataFrame([[rotatable_bonds, H_Acceptors, H_Donors, Nitrogen_Oxygen, mol_weight, mol_logp, aromatic_proportion]], columns=['num_Rotatable_Bonds','num_H_Bond_Acceptors',  'num_H_Bond_Doners', 'num_Nitrogen_Oxygen', 'mol_weight', 'LogP', 'aromatic proportion'])
        # x_pred = np.array(mol_params).reshape(1,-1)
-        solubility_prediction = best_pipeline.predict(mol_params)
-        col5.metric("Predicted logS", f"{solubility_prediction}")
-        col6.metric("Predicted water solubility (moldm^3)", f"{pow(10,solubility_prediction)}")
-        col6.metric("Predicted water solubility (gdm^3)", f"{pow(10,solubility_prediction)*mol_weight}")
+        solubility_prediction = pipeline.predict(mol_params)
+        col5.metric("Predicted logS", f"{solubility_prediction[0]}")
+        col6.metric("Predicted water solubility (moldm^3)", f"{pow(10,solubility_prediction[0])}")
+        col6.metric("Predicted water solubility (gdm^3)", f"{pow(10,solubility_prediction[0])*mol_weight}")
 
         print (mol_params)
         mol_params

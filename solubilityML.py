@@ -8,18 +8,18 @@ import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn import linear_model
-from sklearn.linear_model import RidgeCV
+from sklearn.linear_model import LassoCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
-from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_squared_error, r2_score
 
 
 
 def fetch_data(database: str, table: str) -> pd.DataFrame:
     server = 'database-1.cp4ckgkwuxiq.eu-north-1.rds.amazonaws.com'
     username = 'admin'
-    password = 'password'  # <-- Replace with your actual password
+    password = 'Wireless1996!'  # <-- Replace with your actual password
     
     # 1. Safely URL-encode the pyodbc connection string parameters
     # This prevents errors if your password contains special characters (like @, #, or :)
@@ -62,13 +62,13 @@ print (x_train)
 
 base_learners = [
     ('lr', linear_model.BayesianRidge()),
-    ('knn', KNeighborsRegressor())
+    ('knn', KNeighborsRegressor(weights='uniform',n_neighbors=12, algorithm='ball_tree', leaf_size=20))
 ]
 
 stacking_ensemble = StackingRegressor(
     estimators=base_learners,
-    final_estimator=RidgeCV(),
-    cv = 3
+    final_estimator=LassoCV(),
+    cv = 2
                                         
 )
 
@@ -77,28 +77,28 @@ pipeline = Pipeline([
   ('stack', stacking_ensemble)  
 ])
 
-param_grid = {
+print ("fitting model")
+pipeline.fit(x_train, y_train)
+print ("testing model")
+y_train_pred = pipeline.predict(x_train)
+y_test_pred = pipeline.predict(x_test)
 
-    
-    # Tune the KNN model hidden inside the stack step
-    'stack__knn__n_neighbors': [9, 11, 15, 21],
-    
-    # Tune the weights parameter of the KNN model inside the stack step
-    'stack__knn__weights': ['uniform']
-}
-grid_search = GridSearchCV(
-    estimator=pipeline,
-    param_grid=param_grid,
-    cv=5,
-    scoring='r2',
-    n_jobs=-1
-)
+joblib.dump(pipeline, "solubilityML_grid_search_4")
 
-grid_search.fit(x_train, y_train)
 
-# 6. Output the results
-print(f"Best Parameters: {grid_search.best_params_}")
-print(f"Best CV R² Score: {grid_search.best_score_:.4f}")
-print(f"Test Set R² Score: {grid_search.score(x_test, y_test):.4f}")
-print(df.head())
-joblib.dump(grid_search, "solubilityML_grid_search_3")
+train_score = pipeline.score(x_train, y_train)
+train_MSE = mean_squared_error(y_train, y_train_pred)
+test_MSE = mean_squared_error(y_test, y_test_pred)
+# 2. Calculate the score on the test data
+test_score = pipeline.score(x_test, y_test)
+
+print(f"Training R² Score: {train_score:.4f}")
+print(f"Test R² Score:     {test_score:.4f}")
+
+# 3. Evaluate the gap
+gap = train_score - test_score
+print(f"Performance Gap:   {gap:.4f}")
+
+bkr_results = pd.DataFrame(['Baysian Ridge + KNN', 'RidgeCV', train_score, test_score, gap, test_MSE, train_MSE]).transpose()
+bkr_results.columns = ['Base learners', 'final estimator', 'Training R2', 'testing R2', 'performance gap', 'test MSE', 'train MSE']
+print(bkr_results)
