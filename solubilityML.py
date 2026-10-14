@@ -19,7 +19,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 def fetch_data(database: str, table: str) -> pd.DataFrame:
     server = 'database-1.cp4ckgkwuxiq.eu-north-1.rds.amazonaws.com'
     username = 'admin'
-    password = 'Wireless1996!'  # <-- Replace with your actual password
+    password = 'password'  # <-- Replace with your actual password
     
     # 1. Safely URL-encode the pyodbc connection string parameters
     # This prevents errors if your password contains special characters (like @, #, or :)
@@ -52,7 +52,7 @@ def fetch_data(database: str, table: str) -> pd.DataFrame:
     except Exception as e:
         print(f"Error connecting to database: {e}")
         return pd.DataFrame()
-df = fetch_data(database='solubility_training', table='mol_properties')
+df = fetch_data(database='solubility_training', table='mol_properties_exp')
 
 y = df['measured log(solubility:mol/L)']   # Y is feature used for training
 x = df.drop(['measured log(solubility:mol/L)', 'Compound ID', 'SMILES'], axis=1)     #X is the feature we are predicting drop logS and axis = 1 --> work in coluns
@@ -83,7 +83,7 @@ print ("testing model")
 y_train_pred = pipeline.predict(x_train)
 y_test_pred = pipeline.predict(x_test)
 
-joblib.dump(pipeline, "solubilityML_grid_search_4")
+joblib.dump(pipeline, "solubilityML_model_v1")
 
 
 train_score = pipeline.score(x_train, y_train)

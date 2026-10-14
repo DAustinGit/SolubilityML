@@ -11,7 +11,7 @@ df = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/refs/head
 def push_data(database: str, table: str, dataframe: pd.DataFrame):
     server = 'database-1.cp4ckgkwuxiq.eu-north-1.rds.amazonaws.com'
     username = 'admin'
-    password = 'Wireless1996!'  # <-- Replace with your actual password
+    password = 'password'  # <-- Replace with your actual password
     
     # 1. Safely URL-encode the pyodbc connection string parameters
     # This prevents errors if your password contains special characters (like @, #, or :)

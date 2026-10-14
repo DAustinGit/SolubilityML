@@ -12,12 +12,12 @@ st.title("🧪 Interactive Molecular Descriptor Calculator")
 # 1. Embed the drawing interface
 st.subheader("Draw your molecule below:")
 # The widget returns the SMILES string whenever the user modifies the drawing
-smiles = st_ketcher() 
+smiles1 = st_ketcher() 
 
 # 2. Process the structure dynamically with RDKit
 @st.cache_data(ttl=3600)
-def fetch(smiles) -> pd.DataFrame:
-    data = db.fetch_data(entry = smiles, column = "SMILES", table='mol_properties_exp') 
+def fetch(smiles2) -> pd.DataFrame:
+    data = db.fetch_data(SMILES = smiles2, column = "SMILES", table='mol_properties_exp') 
     if data is None or (isinstance(data, pd.DataFrame) and data.empty):
         return None
     return data
@@ -41,11 +41,11 @@ def calc_properties(mol):
         H_Donors = Lipinski.NumHDonors(mol)
         Nitrogen_Oxygen = Lipinski.NOCount(mol)
         tpsa = Descriptors.TPSA(mol, includeSandP=True)
-        st.info(f"**Generated SMILES:** `{smiles}`")
+        st.info(f"**Generated SMILES:** `{smiles2}`")
       
        # x_pred = np.array(mol_params).reshape(1,-1)
       
-        fetched_data =  fetch(smiles)
+        fetched_data =  fetch(smiles2)
         
         # Display results in structured columns
     
@@ -62,7 +62,7 @@ def calc_properties(mol):
                     try: 
                         logS = math.log10((float(solubility)) / mol_weight)
                         mol_params = pd.DataFrame([[
-                            formula, logS, smiles, rotatable_bonds, H_Acceptors, 
+                            formula, logS, smiles1, rotatable_bonds, H_Acceptors, 
                             H_Donors, Nitrogen_Oxygen, mol_weight, mol_logp, 
                             aromatic_proportion, tpsa
                         ]], columns=[
@@ -83,6 +83,7 @@ def calc_properties(mol):
      else:
         st.error("The drawn structure is not completely recognized yet. Keep drawing!")
 
-if smiles:
-    mol = Chem.MolFromSmiles(smiles)
+if smiles1:
+    mol = Chem.MolFromSmiles(smiles1)
+    smiles2 = Chem.MolToSmiles(mol, kekuleSmiles=False)
     calc_properties(mol)

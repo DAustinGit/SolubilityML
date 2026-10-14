@@ -21,11 +21,11 @@ def cnx():
    
    return connection_url
 
-def fetch_data(column: str, entry: str, table: str) -> pd.DataFrame:    
+def fetch_data(column: str, SMILES: str,  table: str) -> pd.DataFrame:    
     url = cnx()
     try:
         engine = create_engine(url)    
-        query = text(f"SELECT * FROM {table} WHERE {column} = '{entry}';")
+        query = text(f"SELECT * FROM {table} WHERE {column} COLLATE Latin1_General_CS_AS = '{SMILES}';")
         print (query)
         with engine.connect() as connection:
             print("Successfully connected to AWS SQL Server via SQLAlchemy!")
