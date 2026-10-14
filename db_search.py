@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, text
 def cnx():
    server = 'database-1.cp4ckgkwuxiq.eu-north-1.rds.amazonaws.com'
    username = 'admin'
-   password = 'Wireless1996!'
+   password = 'password'
    database =  'solubility_training'
    params = urllib.parse.quote_plus(
         f"DRIVER={{ODBC Driver 18 for SQL Server}};"
